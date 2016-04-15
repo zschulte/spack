@@ -29,11 +29,9 @@ from spack.error import SpackError
 from spack.spec import Spec
 from spack.util.naming import mod_to_class
 
-
 import ast
 import hashlib
 import sys
-import unparse
 
 attributes = ['homepage', 'url', 'list_url', 'extendable', 'parallel', 'make_jobs']
 
@@ -111,12 +109,6 @@ class ResolveMultiMethods(ast.NodeTransformer):
             node.decorator_list = []
             return node
         return None
-
-import StringIO
-def to_source(spec):
-    output = StringIO.StringIO()
-    unparse.Unparser(package_ast(spec), file=output)
-    return output.getvalue()
 
 def package_content(spec):
     return ast.dump(package_ast(spec))
