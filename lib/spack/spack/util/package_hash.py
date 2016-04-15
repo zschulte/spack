@@ -95,8 +95,7 @@ class ResolveMultiMethods(ast.NodeTransformer):
 
     def resolve(self, node):
         if node.name not in self.methods:
-            print "WAT", node.name, node
-            return node
+            raise PackageHashError("Future traversal visited new node: %s" % node.name)
 
         result = None
         for n, cond in self.methods[node.name]:
