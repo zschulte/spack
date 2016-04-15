@@ -15,7 +15,7 @@ class HashTest1(Package):
     version('1.4', 'd' * 32)
 
     patch('patch1.patch', when="@1.1")
-    patch('patch2.patch', when="@1.2")
+    patch('patch2.patch', when="@1.4")
 
     variant('variantx', default=False, description='Test variant X')
     variant('varianty', default=False, description='Test variant Y')
@@ -23,10 +23,10 @@ class HashTest1(Package):
     def setup_dependent_environment(self, spack_env, run_env, dependent_spec):
         pass
     
-    @when('@:1.3')
+    @when('@:1.4')
     def install(self, spec, prefix):
         print "install 1"
 
-    @when('@1.4')
+    @when('@1.5')
     def install(self, spec, prefix):
         os.listdir(os.getcwd())

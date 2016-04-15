@@ -49,13 +49,23 @@ class PackageHashTest(MockPackagesTest):
         """
         Archive hash is not intended to be reflected in Package hash.
         """
+        spec1 = Spec("hash-test1@1.3")
+        spec2 = Spec("hash-test2@1.3")
+        self.compare_sans_name(self.assertEqual, spec1, spec2)
+
+    def test_all_same_but_patch_contents(self):
         spec1 = Spec("hash-test1@1.1")
         spec2 = Spec("hash-test2@1.1")
         self.compare_sans_name(self.assertEqual, spec1, spec2)
 
-    def test_all_same_but_install(self):
+    def test_all_same_but_patches_to_apply(self):
         spec1 = Spec("hash-test1@1.4")
         spec2 = Spec("hash-test2@1.4")
+        self.compare_sans_name(self.assertEqual, spec1, spec2)
+
+    def test_all_same_but_install(self):
+        spec1 = Spec("hash-test1@1.5")
+        spec2 = Spec("hash-test2@1.5")
         self.compare_sans_name(self.assertNotEqual, spec1, spec2)
 
     def remove_pkg_name(self, spec, content):

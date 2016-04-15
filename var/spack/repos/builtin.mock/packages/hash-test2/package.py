@@ -15,7 +15,6 @@ class HashTest2(Package):
     version('1.4', 'd' * 32)
 
     patch('patch1.patch', when="@1.1")
-    patch('patch2.patch', when="@1.2")
 
     variant('variantx', default=False, description='Test variant X')
     variant('varianty', default=False, description='Test variant Y')
