@@ -38,6 +38,7 @@ import re
 import textwrap
 import time
 import glob
+import itertools
 
 import llnl.util.tty as tty
 import spack
@@ -766,18 +767,16 @@ class Package(object):
 
         # Apply all the patches for specs that match this one
         patched = False
-        for spec, patch_list in self.patches.items():
-            if self.spec.satisfies(spec):
-                for patch in patch_list:
-                    try:
-                        patch.apply(self.stage)
-                        tty.msg('Applied patch %s' % patch.path_or_url)
-                        patched = True
-                    except:
-                        # Touch bad file if anything goes wrong.
-                        tty.msg('Patch %s failed.' % patch.path_or_url)
-                        touch(bad_file)
-                        raise
+        for patch in self.patches_to_apply():
+            try:
+                patch.apply(self.stage)
+                tty.msg('Applied patch %s' % patch.path_or_url)
+                patched = True
+            except:
+                # Touch bad file if anything goes wrong.
+                tty.msg('Patch %s failed.' % patch.path_or_url)
+                touch(bad_file)
+                raise
 
         if has_patch_fun:
             try:
@@ -800,6 +799,15 @@ class Package(object):
             touch(good_file)
         else:
             touch(no_patches_file)
+
+
+    def patches_to_apply(self):
+        """If the patch set does not change between two invocations of spack,
+           then all patches in the set will be applied in the same order"""
+        patchesToApply = itertools.chain.from_iterable(patch_list for 
+            spec, patch_list in self.patches.iteritems()
+            if self.spec.satisfies(spec))
+        return sorted(patchesToApply, key=lambda p: p.url_or_filename)
 
 
     @property
