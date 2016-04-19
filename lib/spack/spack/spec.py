@@ -673,6 +673,9 @@ class Spec(object):
 
 
     def full_hash(self):
+        if not self.concrete:
+            raise SpecError("Spec is not concrete: " + str(self))
+        
         if not self._full_hash:
             yaml_text = yaml.dump(
                 self.to_node_dict(), default_flow_style=True, width=sys.maxint)
@@ -710,7 +713,7 @@ class Spec(object):
         for s in self.traverse(order='pre'):
             node = s.to_node_dict()
             node[s.name]['hash'] = s.dag_hash()
-            node[s.name]['full_hash'] = s.full_hash()
+            node[s.name]['full_hash'] = s.full_hash() if self.concrete else None
             node_list.append(node)
         return yaml.dump({ 'spec' : node_list },
                          stream=stream, default_flow_style=False)
