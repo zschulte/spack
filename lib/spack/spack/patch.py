@@ -22,7 +22,9 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ##############################################################################
+import base64
 import os
+import hashlib
 
 import llnl.util.tty as tty
 from llnl.util.filesystem import join_path
@@ -47,6 +49,7 @@ class Patch(object):
         self.path = None
         self.url = None
         self.level = level
+        self.file_hash = None
 
         if not isinstance(self.level, int) or not self.level >= 0:
             raise ValueError("Patch level needs to be a non-negative integer.")
@@ -76,13 +79,16 @@ class Patch(object):
             else:
                 patch_file = self.path
 
+            with open(patch_file, 'rb') as F:
+                self.file_hash = base64.b32encode(
+                    hashlib.md5(F.read()).digest()).lower()
+
             # Use -N to allow the same patches to be applied multiple times.
             _patch('-s', '-p', str(self.level), '-i', patch_file)
 
         finally:
             if patch_stage:
                 patch_stage.destroy()
-
 
 
 class NoSuchPatchFileError(spack.error.SpackError):

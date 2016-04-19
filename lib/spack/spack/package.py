@@ -63,6 +63,9 @@ from spack.util.environment import dump_environment
 from spack.util.executable import ProcessError
 from spack.version import *
 from urlparse import urlparse
+from spack.util.package_hash import package_hash
+import hashlib
+import base64
 
 """Allowed URL schemes for spack packages."""
 _ALLOWED_URL_SCHEMES = ["http", "https", "ftp", "file", "git"]
@@ -807,7 +810,20 @@ class Package(object):
         patchesToApply = itertools.chain.from_iterable(patch_list for 
             spec, patch_list in self.patches.iteritems()
             if self.spec.satisfies(spec))
-        return sorted(patchesToApply, key=lambda p: p.url_or_filename)
+        return sorted(patchesToApply, key=lambda p: p.path_or_url)
+
+
+    def package_hash(self):
+        #TODO: this is only valid after staging and applying patches
+        hashContent = list()
+        versionInfo = self.versions[self.version]
+        if 'md5' in versionInfo:
+            hashContent.append(versionInfo['md5'])
+        hashContent.extend(':'.join((p.file_hash, p.level)) 
+            for p in self.patches_to_apply())
+        hashContent.append(package_hash(self.spec))
+        return base64.b32encode(
+            hashlib.sha1(''.join(sorted(hashContent))).digest()).lower()
 
 
     @property

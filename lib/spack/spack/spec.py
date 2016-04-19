@@ -424,6 +424,8 @@ class Spec(object):
         # Allow a spec to be constructed with an external path.
         self.external  = kwargs.get('external', None)
 
+        self._full_hash = kwargs.get('hash', None)
+
         # This allows users to construct a spec DAG with literals.
         # Note that given two specs a and b, Spec(a) copies a, but
         # Spec(a, b) will copy a but just add b as a dep.
@@ -670,6 +672,17 @@ class Spec(object):
         return base64.b32encode(sha.digest()).lower()[:length]
 
 
+    def full_hash(self):
+        if self._full_hash:
+            return self._full_hash
+    
+        yaml_text = yaml.dump(
+            self.to_node_dict(), default_flow_style=True, width=sys.maxint)
+        package_hash = self.package.package_hash()
+        sha = hashlib.sha1(yaml_text + package_hash)
+        return base64.b32encode(sha.digest()).lower()
+
+
     def to_node_dict(self):
         d = {
             'variants' : dict(
@@ -696,7 +709,7 @@ class Spec(object):
         node_list = []
         for s in self.traverse(order='pre'):
             node = s.to_node_dict()
-            node[s.name]['hash'] = s.dag_hash()
+            node[s.name]['hash'] = s.full_hash()
             node_list.append(node)
         return yaml.dump({ 'spec' : node_list },
                          stream=stream, default_flow_style=False)
@@ -707,7 +720,7 @@ class Spec(object):
         name = next(iter(node))
         node = node[name]
 
-        spec = Spec(name)
+        spec = Spec(name, hash=node.get('hash', None))
         spec.namespace = node.get('namespace', None)
         spec.versions = VersionList.from_dict(node)
         spec.architecture = node['arch']
@@ -1531,6 +1544,7 @@ class Spec(object):
         # Since we preserved structure, we can copy _normal safely.
         self._normal = other._normal
         self._concrete = other._concrete
+        self._full_hash = other._full_hash
         self.external = other.external
         return changed
 
@@ -1946,6 +1960,7 @@ class SpecParser(spack.parse.Parser):
 
         spec._normal = False
         spec._concrete = False
+        spec._full_hash = None
 
         # record this so that we know whether version is
         # unspecified or not.

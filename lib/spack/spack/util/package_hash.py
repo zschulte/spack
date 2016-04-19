@@ -23,7 +23,6 @@
 # Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ##############################################################################
 import spack
-from spack import Package
 from spack.directives import directives
 from spack.error import SpackError
 from spack.spec import Spec
@@ -113,7 +112,7 @@ def package_content(spec):
     return ast.dump(package_ast(spec))
     
 def package_hash(spec):
-    return hashlib.md5(package_content(spec))
+    return hashlib.md5(package_content(spec)).digest().lower()
 
 def package_ast(spec):
     spec = Spec(spec)
