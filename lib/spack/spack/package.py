@@ -816,6 +816,9 @@ class Package(object):
     def package_hash(self):
         hashContent = list()
         versionInfo = self.versions[self.version]
+        #TODO: this does not handle source control repos. Those which have a tag
+        #or revision should be easy, but what about cases where the latest state
+        #is being pulled.
         if 'md5' in versionInfo:
             hashContent.append(versionInfo['md5'])
         hashContent.extend(':'.join((p.file_hash, p.level)) 
