@@ -814,7 +814,6 @@ class Package(object):
 
 
     def package_hash(self):
-        #TODO: this is only valid after staging and applying patches
         hashContent = list()
         versionInfo = self.versions[self.version]
         if 'md5' in versionInfo:
