@@ -33,8 +33,10 @@ class PackageHashTest(MockPackagesTest):
         package_hash("hash-test1@1.2")
     
     def test_variants(self):
-        self.assertNotEqual(package_hash("hash-test1@1.2 +variantx"), 
-            package_hash("hash-test1@1.2 +varianty"))
+        spec1 = Spec("hash-test1@1.2 +variantx")
+        spec2 = Spec("hash-test1@1.2 +varianty")
+        self.assertEqual(package_hash(spec1), 
+            package_hash(spec2))
 
     def test_all_same_but_name(self):
         spec1 = Spec("hash-test1@1.2")
