@@ -424,7 +424,7 @@ class Spec(object):
         # Allow a spec to be constructed with an external path.
         self.external  = kwargs.get('external', None)
 
-        self._full_hash = kwargs.get('hash', None)
+        self._full_hash = kwargs.get('full_hash', None)
 
         # This allows users to construct a spec DAG with literals.
         # Note that given two specs a and b, Spec(a) copies a, but
@@ -673,14 +673,14 @@ class Spec(object):
 
 
     def full_hash(self):
-        if self._full_hash:
-            return self._full_hash
-    
-        yaml_text = yaml.dump(
-            self.to_node_dict(), default_flow_style=True, width=sys.maxint)
-        package_hash = self.package.package_hash()
-        sha = hashlib.sha1(yaml_text + package_hash)
-        return base64.b32encode(sha.digest()).lower()
+        if not self._full_hash:
+            yaml_text = yaml.dump(
+                self.to_node_dict(), default_flow_style=True, width=sys.maxint)
+            package_hash = self.package.package_hash()
+            sha = hashlib.sha1(yaml_text + package_hash)
+            self._full_hash = base64.b32encode(sha.digest()).lower()
+        
+        return self._full_hash
 
 
     def to_node_dict(self):
@@ -709,7 +709,8 @@ class Spec(object):
         node_list = []
         for s in self.traverse(order='pre'):
             node = s.to_node_dict()
-            node[s.name]['hash'] = s.full_hash()
+            node[s.name]['hash'] = s.dag_hash()
+            node[s.name]['full_hash'] = s.full_hash()
             node_list.append(node)
         return yaml.dump({ 'spec' : node_list },
                          stream=stream, default_flow_style=False)
@@ -720,7 +721,7 @@ class Spec(object):
         name = next(iter(node))
         node = node[name]
 
-        spec = Spec(name, hash=node.get('hash', None))
+        spec = Spec(name, full_hash=node.get('full_hash', None))
         spec.namespace = node.get('namespace', None)
         spec.versions = VersionList.from_dict(node)
         spec.architecture = node['arch']
