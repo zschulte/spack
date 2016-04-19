@@ -25,6 +25,7 @@
 import base64
 import os
 import hashlib
+from contextlib import contextmanager
 
 import llnl.util.tty as tty
 from llnl.util.filesystem import join_path
@@ -49,7 +50,7 @@ class Patch(object):
         self.path = None
         self.url = None
         self.level = level
-        self.file_hash = None
+        self._file_hash = None
 
         if not isinstance(self.level, int) or not self.level >= 0:
             raise ValueError("Patch level needs to be a non-negative integer.")
@@ -63,6 +64,15 @@ class Patch(object):
                 raise NoSuchPatchFileError(pkg_name, self.path)
 
 
+    @property
+    def file_hash(self):
+        if not self._file_hash:
+            with self.get_patch() as patch_file:
+                self._file_hash = file_hash(patch_file)
+                    
+        return self._file_hash
+
+
     def apply(self, stage):
         """Fetch this patch, if necessary, and apply it to the source
            code in the supplied stage.
@@ -70,25 +80,34 @@ class Patch(object):
         stage.chdir_to_source()
 
         patch_stage = None
-        try:
-            if self.url:
-                # use an anonymous stage to fetch the patch if it is a URL
-                patch_stage = spack.stage.Stage(self.url)
-                patch_stage.fetch()
-                patch_file = patch_stage.archive_file
-            else:
-                patch_file = self.path
-
-            with open(patch_file, 'rb') as F:
-                self.file_hash = base64.b32encode(
-                    hashlib.md5(F.read()).digest()).lower()
+        with self.get_patch() as patch_file:
+            self._file_hash = file_hash(patch_file)
 
             # Use -N to allow the same patches to be applied multiple times.
             _patch('-s', '-p', str(self.level), '-i', patch_file)
 
-        finally:
-            if patch_stage:
-                patch_stage.destroy()
+    def get_patch(self):
+        if self.url:
+            return get_url(self.url)
+        else:
+            return get_file(self.path)
+
+
+@contextmanager
+def get_url(url):
+    with spack.stage.Stage(self.url) as tmp_stage:
+        tmp_stage.fetch()
+        yield tmp_stage.archive_file
+
+
+@contextmanager
+def get_file(path):
+    yield path
+  
+
+def file_hash(path):
+    with open(patch_file, 'rb') as F:
+        return base64.b32encode(hashlib.md5(F.read()).digest()).lower()
 
 
 class NoSuchPatchFileError(spack.error.SpackError):
