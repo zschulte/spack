@@ -90,7 +90,7 @@ class BuildId(object):
     def __init__(self, spec):
         self.name = spec.name
         self.version = spec.version
-        self.hashId = spec.dag_hash()
+        self.hashId = spec.full_hash()
 
     def stringId(self):
         return "-".join(str(x) for x in (self.name, self.version, self.hashId))
