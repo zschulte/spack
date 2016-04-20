@@ -681,7 +681,7 @@ class Spec(object):
             yaml_text = yaml.dump(
                 self.to_node_dict(hash_function=lambda s: s.full_hash()), 
                 default_flow_style=True, width=sys.maxint)
-            package_hash = self.package.package_hash()
+            package_hash = self.package.content_hash()
             sha = hashlib.sha1(yaml_text + package_hash)
             self._full_hash = base64.b32encode(sha.digest()).lower()
         

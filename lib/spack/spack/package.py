@@ -813,7 +813,10 @@ class Package(object):
         return sorted(patchesToApply, key=lambda p: p.path_or_url)
 
 
-    def package_hash(self):
+    def content_hash(self):
+        """Create a hash based on the sources and logic used to build the 
+        package. This includes the contents of all applied patches and the
+        contents of applicable functions in the package subclass."""
         hashContent = list()
         versionInfo = self.versions[self.version]
         #TODO: this does not handle source control repos. Those which have a tag
