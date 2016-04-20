@@ -41,12 +41,13 @@ def _print_ref_counts():
     recs = []
 
     def add_rec(spec):
+        spec.concretize()
         cspecs = spack.installed_db.query(spec, installed=any)
 
         if not cspecs:
             recs.append("[ %-7s ] %-20s-" % ('', spec))
         else:
-            key = cspecs[0].dag_hash()
+            key = cspecs[0].full_hash()
             rec = spack.installed_db.get_record(cspecs[0])
             recs.append("[ %-7s ] %-20s%d" % (key[:7], spec, rec.ref_count))
 
@@ -193,6 +194,8 @@ class DatabaseTest(MockDatabase):
            removed, that it's back when added again, and that ref
            counts are consistent.
         """
+        spec = spack.spec.Spec(spec)
+        spec.concretize()
         original = self.installed_db.query()
         self.installed_db._check_ref_counts()
 

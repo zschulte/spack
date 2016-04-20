@@ -667,31 +667,33 @@ class Spec(object):
         Return a hash of the entire spec DAG, including connectivity.
         """
         yaml_text = yaml.dump(
-            self.to_node_dict(), default_flow_style=True, width=sys.maxint)
+            self.to_node_dict(hash_function=lambda s: s.dag_hash()), 
+            default_flow_style=True, width=sys.maxint)
         sha = hashlib.sha1(yaml_text)
         return base64.b32encode(sha.digest()).lower()[:length]
 
 
-    def full_hash(self):
+    def full_hash(self, length=None):
         if not self.concrete:
             raise SpecError("Spec is not concrete: " + str(self))
         
         if not self._full_hash:
             yaml_text = yaml.dump(
-                self.to_node_dict(), default_flow_style=True, width=sys.maxint)
+                self.to_node_dict(hash_function=lambda s: s.full_hash()), 
+                default_flow_style=True, width=sys.maxint)
             package_hash = self.package.package_hash()
             sha = hashlib.sha1(yaml_text + package_hash)
-            self._full_hash = base64.b32encode(sha.digest()).lower()
+            self._full_hash = base64.b32encode(sha.digest()).lower()[:length]
         
         return self._full_hash
 
 
-    def to_node_dict(self):
+    def to_node_dict(self, hash_function):
         d = {
             'variants' : dict(
                 (name,v.enabled) for name, v in self.variants.items()),
             'arch' : self.architecture,
-            'dependencies' : dict((d, self.dependencies[d].dag_hash())
+            'dependencies' : dict((d, hash_function(self.dependencies[d]))
                                   for d in sorted(self.dependencies))
         }
 
@@ -710,8 +712,14 @@ class Spec(object):
 
     def to_yaml(self, stream=None):
         node_list = []
+        # Note that yaml for un-concretized specs will never be written to an
+        # installation directory checked by the DB, so reference errors will not
+        # occur. This uses full_hash when available and otherwise (i.e. if not
+        # concrete) falls back on dag_hash (to allow converting unconcretized
+        # specs to yaml and reading them back)
+        hash_function = lambda x: x.full_hash() if x.concrete else x.dag_hash()
         for s in self.traverse(order='pre'):
-            node = s.to_node_dict()
+            node = s.to_node_dict(hash_function)
             node[s.name]['hash'] = s.dag_hash()
             node[s.name]['full_hash'] = s.full_hash() if self.concrete else None
             node_list.append(node)

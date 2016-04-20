@@ -288,6 +288,7 @@ class RepoPath(object):
     @_autospec
     def repo_for_pkg(self, spec):
         """Given a spec, get the repository for its package."""
+        from nose.tools import set_trace; set_trace()
         # If the spec already has a namespace, then return the
         # corresponding repo if we know about it.
         if spec.namespace:

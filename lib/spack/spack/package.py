@@ -461,7 +461,7 @@ class Package(object):
         mp = spack.mirror.mirror_archive_path(self.spec, fetcher)
         # Construct a path where the stage should build..
         s = self.spec
-        stage_name = "%s-%s-%s" % (s.name, s.version, s.dag_hash())
+        stage_name = "%s-%s-%s" % (s.name, s.version, s.full_hash())
         # Build the composite stage
         stage = Stage(fetcher, mirror_path=mp, name=stage_name, path=self.path)
         return stage
@@ -854,7 +854,7 @@ class Package(object):
         return resources
 
     def _resource_stage(self, resource):
-        pieces = ['resource', resource.name, self.spec.dag_hash()]
+        pieces = ['resource', resource.name, self.spec.full_hash()]
         resource_stage_folder = '-'.join(pieces)
         return resource_stage_folder
 

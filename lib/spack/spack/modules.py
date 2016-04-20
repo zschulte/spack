@@ -236,7 +236,7 @@ class Dotkit(EnvModule):
       return "%s-%s-%s-%s-%s" % (self.spec.name, self.spec.version,
                                  self.spec.compiler.name,
                                  self.spec.compiler.version,
-                                 self.spec.dag_hash())
+                                 self.spec.full_hash())
 
     def write_header(self, dk_file):
         # Category
@@ -274,7 +274,7 @@ class TclModule(EnvModule):
       return "%s-%s-%s-%s-%s" % (self.spec.name, self.spec.version,
                                  self.spec.compiler.name,
                                  self.spec.compiler.version,
-                                 self.spec.dag_hash())
+                                 self.spec.full_hash())
 
     def write_header(self, module_file):
         # TCL Modulefile header

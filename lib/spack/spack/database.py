@@ -99,7 +99,8 @@ class InstallRecord(object):
         self.ref_count = ref_count
 
     def to_dict(self):
-        return { 'spec'      : self.spec.to_node_dict(),
+        return { 'spec'      : self.spec.to_node_dict(
+                               hash_function=lambda x: x.full_hash()),
                  'path'      : self.path,
                  'installed' : self.installed,
                  'ref_count' : self.ref_count }
@@ -263,7 +264,7 @@ class Database(object):
 
                 # Validate the spec by ensuring the stored and actual
                 # hashes are the same.
-                spec_hash = spec.dag_hash()
+                spec_hash = spec.full_hash()
                 if not spec_hash == hash_key:
                     tty.warn("Hash mismatch in database: %s -> spec with hash %s"
                              % (hash_key, spec_hash))
@@ -320,12 +321,12 @@ class Database(object):
         for key, rec in self._data.items():
             counts.setdefault(key, 0)
             for dep in rec.spec.dependencies.values():
-                dep_key = dep.dag_hash()
+                dep_key = dep.full_hash()
                 counts.setdefault(dep_key, 0)
                 counts[dep_key] += 1
 
         for rec in self._data.values():
-            key = rec.spec.dag_hash()
+            key = rec.spec.full_hash()
             expected = counts[key]
             found = rec.ref_count
             if not expected == found:
@@ -379,7 +380,7 @@ class Database(object):
         This operation is in-memory, and does not lock the DB.
 
         """
-        key = spec.dag_hash()
+        key = spec.full_hash()
         if key in self._data:
             rec = self._data[key]
             rec.installed = True
@@ -399,7 +400,7 @@ class Database(object):
 
     def _increment_ref_count(self, spec, directory_layout=None):
         """Recursively examine dependencies and update their DB entries."""
-        key = spec.dag_hash()
+        key = spec.full_hash()
         if key not in self._data:
             installed = False
             path = None
@@ -429,23 +430,25 @@ class Database(object):
 
     def _get_matching_spec_key(self, spec, **kwargs):
         """Get the exact spec OR get a single spec that matches."""
-        key = spec.dag_hash()
+        key = spec.full_hash()
         if not key in self._data:
             match = self.query_one(spec, **kwargs)
             if match:
-                return match.dag_hash()
+                return match.full_hash()
             raise KeyError("No such spec in database! %s" % spec)
         return key
 
 
     @_autospec
     def get_record(self, spec, **kwargs):
+        spec = spack.spec.Spec(spec)
+        spec.concretize()
         key = self._get_matching_spec_key(spec, **kwargs)
         return self._data[key]
 
 
     def _decrement_ref_count(self, spec):
-        key = spec.dag_hash()
+        key = spec.full_hash()
 
         if not key in self._data:
             # TODO: print something here?  DB is corrupt, but
@@ -494,6 +497,8 @@ class Database(object):
         """
         # Take a lock around the entire removal.
         with self.write_transaction():
+            spec = spack.spec.Spec(spec)
+            spec.concretize()
             return self._remove(spec)
 
 
@@ -575,7 +580,7 @@ class Database(object):
 
     def missing(self, spec):
         with self.read_transaction():
-            key =  spec.dag_hash()
+            key =  spec.full_hash()
             return key in self._data and not self._data[key].installed
 
 

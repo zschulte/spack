@@ -205,7 +205,7 @@ class YamlDirectoryLayout(DirectoryLayout):
         dir_name = "%s-%s-%s" % (
             spec.name,
             spec.version,
-            spec.dag_hash(self.hash_len))
+            spec.full_hash(self.hash_len))
 
         path = join_path(
             spec.architecture,
@@ -285,7 +285,7 @@ class YamlDirectoryLayout(DirectoryLayout):
         if installed_spec == spec:
             return path
 
-        if spec.dag_hash() == installed_spec.dag_hash():
+        if spec.full_hash() == installed_spec.full_hash():
             raise SpecHashCollisionError(installed_hash, spec_hash)
         else:
             raise InconsistentInstallDirectoryError(
@@ -305,7 +305,7 @@ class YamlDirectoryLayout(DirectoryLayout):
     def specs_by_hash(self):
         by_hash = {}
         for spec in self.all_specs():
-            by_hash[spec.dag_hash()] = spec
+            by_hash[spec.full_hash()] = spec
         return by_hash
 
 
@@ -328,7 +328,7 @@ class YamlDirectoryLayout(DirectoryLayout):
             yaml.dump({
                 'extensions' : [
                     { ext.name : {
-                        'hash' : ext.dag_hash(),
+                        'full_hash' : ext.full_hash(),
                         'path' : str(ext.prefix)
                     }} for ext in sorted(extensions.values())]
             }, tmp, default_flow_style=False)
@@ -354,18 +354,18 @@ class YamlDirectoryLayout(DirectoryLayout):
                     yaml_file = yaml.load(ext_file)
                     for entry in yaml_file['extensions']:
                         name = next(iter(entry))
-                        dag_hash = entry[name]['hash']
+                        full_hash = entry[name]['full_hash']
                         prefix   = entry[name]['path']
 
-                        if not dag_hash in by_hash:
+                        if not full_hash in by_hash:
                             raise InvalidExtensionSpecError(
-                                "Spec %s not found in %s" % (dag_hash, prefix))
+                                "Spec %s not found in %s" % (full_hash, prefix))
 
-                        ext_spec = by_hash[dag_hash]
+                        ext_spec = by_hash[full_hash]
                         if not prefix == ext_spec.prefix:
                             raise InvalidExtensionSpecError(
                                 "Prefix %s does not match spec with hash %s: %s"
-                                % (prefix, dag_hash, ext_spec))
+                                % (prefix, full_hash, ext_spec))
 
                         exts[ext_spec.name] = ext_spec
                 self._extension_maps[spec] = exts

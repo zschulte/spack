@@ -52,7 +52,7 @@ class MockSpec(object):
             self.dependencies.itervalues())
         return set(itertools.chain([self], allDeps))
 
-    def dag_hash(self):
+    def full_hash(self):
         return self.hash
 
     def to_yaml(self):
