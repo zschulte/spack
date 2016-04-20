@@ -106,7 +106,7 @@ def get_file(path):
   
 
 def file_hash(path):
-    with open(patch_file, 'rb') as F:
+    with open(path, 'rb') as F:
         return base64.b32encode(hashlib.md5(F.read()).digest()).lower()
 
 

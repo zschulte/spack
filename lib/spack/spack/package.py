@@ -821,7 +821,7 @@ class Package(object):
         #is being pulled.
         if 'md5' in versionInfo:
             hashContent.append(versionInfo['md5'])
-        hashContent.extend(':'.join((p.file_hash, p.level)) 
+        hashContent.extend(':'.join((p.file_hash, str(p.level))) 
             for p in self.patches_to_apply())
         hashContent.append(package_hash(self.spec))
         return base64.b32encode(
