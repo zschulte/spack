@@ -683,9 +683,9 @@ class Spec(object):
                 default_flow_style=True, width=sys.maxint)
             package_hash = self.package.package_hash()
             sha = hashlib.sha1(yaml_text + package_hash)
-            self._full_hash = base64.b32encode(sha.digest()).lower()[:length]
+            self._full_hash = base64.b32encode(sha.digest()).lower()
         
-        return self._full_hash
+        return self._full_hash[:length]
 
 
     def to_node_dict(self, hash_function):

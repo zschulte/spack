@@ -76,7 +76,7 @@ def setup_parser(subparser):
 
 
 def gray_hash(spec, length):
-    return colorize('@K{%s}' % spec.dag_hash(length))
+    return colorize('@K{%s}' % spec.full_hash(length))
 
 
 def display_specs(specs, **kwargs):
