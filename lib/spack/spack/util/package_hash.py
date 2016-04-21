@@ -30,6 +30,7 @@ from spack.util.naming import mod_to_class
 
 import ast
 import hashlib
+import re
 import sys
 
 attributes = ['homepage', 'url', 'list_url', 'extendable', 'parallel', 'make_jobs']
@@ -108,11 +109,16 @@ class ResolveMultiMethods(ast.NodeTransformer):
             return node
         return None
 
-def package_content(spec):
-    return ast.dump(package_ast(spec))
-    
-def package_hash(spec):
-    return hashlib.md5(package_content(spec)).digest().lower()
+def package_content(spec, remove_pkg_name=False):
+    content = ast.dump(package_ast(spec))
+    if remove_pkg_name:
+        pkgName = spec.package.__class__.__name__
+        return re.sub(pkgName, "", content)
+    else:
+        return content
+
+def package_hash(spec, remove_pkg_name=False):
+    return hashlib.md5(package_content(spec, remove_pkg_name)).digest().lower()
 
 def package_ast(spec):
     spec = Spec(spec)

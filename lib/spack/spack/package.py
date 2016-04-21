@@ -813,7 +813,7 @@ class Package(object):
         return sorted(patchesToApply, key=lambda p: p.path_or_url)
 
 
-    def content_hash(self):
+    def content_hash(self, remove_pkg_name=False):
         """Create a hash based on the sources and logic used to build the 
         package. This includes the contents of all applied patches and the
         contents of applicable functions in the package subclass."""
@@ -826,7 +826,7 @@ class Package(object):
             hashContent.append(versionInfo['md5'])
         hashContent.extend(':'.join((p.file_hash, str(p.level))) 
             for p in self.patches_to_apply())
-        hashContent.append(package_hash(self.spec))
+        hashContent.append(package_hash(self.spec, remove_pkg_name))
         return base64.b32encode(
             hashlib.sha1(''.join(sorted(hashContent))).digest()).lower()
 

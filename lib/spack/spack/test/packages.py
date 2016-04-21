@@ -69,6 +69,27 @@ class PackagesTest(MockPackagesTest):
         self.assertEqual('_3db',        mod_to_class('3db'))
 
 
+    def test_content_hash_all_same_but_patch_contents(self):
+        spec1 = Spec("hash-test1@1.1")
+        spec2 = Spec("hash-test2@1.1")
+        self.assertNotEqual(spec1.package.content_hash(remove_pkg_name=True), 
+            spec2.package.content_hash(remove_pkg_name=True))
+
+
+    def test_content_hash_different_variants(self):
+        spec1 = Spec("hash-test1@1.2 +variantx")
+        spec2 = Spec("hash-test2@1.2 ~variantx")
+        self.assertEqual(spec1.package.content_hash(remove_pkg_name=True), 
+            spec2.package.content_hash(remove_pkg_name=True))
+
+
+    def test_all_same_but_archive_hash(self):
+        spec1 = Spec("hash-test1@1.3")
+        spec2 = Spec("hash-test2@1.3")
+        self.assertNotEqual(spec1.package.content_hash(remove_pkg_name=True), 
+            spec2.package.content_hash(remove_pkg_name=True))
+
+
     #
     # Below tests target direct imports of spack packages from the
     # spack.pkg namespace

@@ -32,7 +32,7 @@ class PackageHashTest(MockPackagesTest):
     def test_hash(self):
         package_hash("hash-test1@1.2")
     
-    def test_variants(self):
+    def test_different_variants(self):
         spec1 = Spec("hash-test1@1.2 +variantx")
         spec2 = Spec("hash-test1@1.2 +varianty")
         self.assertEqual(package_hash(spec1), 
@@ -70,14 +70,8 @@ class PackageHashTest(MockPackagesTest):
         spec2 = Spec("hash-test2@1.5")
         self.compare_sans_name(self.assertNotEqual, spec1, spec2)
 
-    def remove_pkg_name(self, spec, content):
-        pkgName = spec.package.__class__.__name__
-        return re.sub(pkgName, "", content)
-
     def compare_sans_name(self, assertFunc, spec1, spec2):
-        content1 = package_content(spec1)
-        content1 = self.remove_pkg_name(spec1, content1)
-        content2 = package_content(spec2)
-        content2 = self.remove_pkg_name(spec2, content2)
+        content1 = package_content(spec1, remove_pkg_name=True)
+        content2 = package_content(spec2, remove_pkg_name=True)
         assertFunc(content1, content2)
     
