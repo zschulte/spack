@@ -107,6 +107,8 @@ class FetchStrategy(object):
 
     def archive(self, destination): pass  # Used to create tarball for mirror.
 
+    def source_id(self): pass
+
     def __str__(self):  # Should be human readable URL.
         return "FetchStrategy.__str___"
 
@@ -125,6 +127,9 @@ class FetchStrategyComposite(object):
     matches = FetchStrategy.matches
     set_stage = FetchStrategy.set_stage
 
+    def source_id(self):
+        return tuple(i.source_id() for i in self)
+    
 
 class URLFetchStrategy(FetchStrategy):
     """FetchStrategy that pulls source code from a URL for an archive,
@@ -148,6 +153,9 @@ class URLFetchStrategy(FetchStrategy):
 
         if not self.url:
             raise ValueError("URLFetchStrategy requires a url for fetching.")
+
+    def source_id(self):
+        return self.digest
 
     @_needs_stage
     def fetch(self):
@@ -401,6 +409,19 @@ class GitFetchStrategy(VCSFetchStrategy):
             self._git = which('git', required=True)
         return self._git
 
+    def source_id(self):
+        if self.commit:
+            return self.commit
+        elif self.tag:
+            commitref = self.tag
+        elif self.branch:
+            commitref = self.branch
+        else:
+            return None
+        output = self.git('ls-remote', self.url, commitref, output=str)
+        if output:
+            return output.split()[0]
+
     @_needs_stage
     def fetch(self):
         self.stage.chdir()
@@ -511,6 +532,17 @@ class SvnFetchStrategy(VCSFetchStrategy):
             self._svn = which('svn', required=True)
         return self._svn
 
+    def source_id(self):
+        if self.revision:
+            return self.revision
+        output = self.svn('info', self.url, output=str)
+        if not output:
+            return None
+        lines = output.split('\n')
+        for line in lines:
+            if line.startswith('Revision:'):
+                return line.split()[-1]
+
     @_needs_stage
     def fetch(self):
         self.stage.chdir()
@@ -589,6 +621,15 @@ class HgFetchStrategy(VCSFetchStrategy):
         if not self._hg:
             self._hg = which('hg', required=True)
         return self._hg
+
+    def source_id(self):
+        args = []
+        if self.revision:
+            args.append('-r {0}'.format(self.revision))
+        args.append(self.url)
+        output = self.hg('id', *args, output=str)
+        if output:
+            return output.strip()
 
     @_needs_stage
     def fetch(self):
