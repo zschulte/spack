@@ -1,26 +1,26 @@
 ##############################################################################
-# Copyright (c) 2013, Lawrence Livermore National Security, LLC.
+# Copyright (c) 2013-2016, Lawrence Livermore National Security, LLC.
 # Produced at the Lawrence Livermore National Laboratory.
 #
 # This file is part of Spack.
-# Written by Todd Gamblin, tgamblin@llnl.gov, All rights reserved.
+# Created by Todd Gamblin, tgamblin@llnl.gov, All rights reserved.
 # LLNL-CODE-647188
 #
 # For details, see https://github.com/llnl/spack
 # Please also see the LICENSE file for our notice and the LGPL.
 #
 # This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License (as published by
-# the Free Software Foundation) version 2.1 dated February 1999.
+# it under the terms of the GNU Lesser General Public License (as
+# published by the Free Software Foundation) version 2.1, February 1999.
 #
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the IMPLIED WARRANTY OF
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the terms and
-# conditions of the GNU General Public License for more details.
+# conditions of the GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU Lesser General Public License
-# along with this program; if not, write to the Free Software Foundation,
-# Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+# You should have received a copy of the GNU Lesser General Public
+# License along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ##############################################################################
 import shutil
 import tempfile
@@ -29,6 +29,7 @@ import spack
 from llnl.util.filesystem import *
 from spack.database import Database
 from spack.directory_layout import YamlDirectoryLayout
+from spack.database import Database
 from spack.fetch_strategy import URLFetchStrategy, FetchStrategyComposite
 from spack.test.mock_packages_test import *
 from spack.test.mock_repo import MockArchive
@@ -50,9 +51,10 @@ class InstallTest(MockPackagesTest):
         # installed pkgs and mock packages.
         self.tmpdir = tempfile.mkdtemp()
         self.orig_layout = spack.install_layout
-        self.orig_install_db = spack.installed_db
+        self.orig_db = spack.installed_db
+
         spack.install_layout = YamlDirectoryLayout(self.tmpdir)
-        spack.installed_db = Database(self.tmpdir)
+        spack.installed_db   = Database(self.tmpdir)
 
 
     def tearDown(self):
@@ -64,7 +66,7 @@ class InstallTest(MockPackagesTest):
 
         # restore spack's layout.
         spack.install_layout = self.orig_layout
-        spack.installed_db = self.orig_install_db
+        spack.installed_db   = self.orig_db
         shutil.rmtree(self.tmpdir, ignore_errors=True)
 
 
@@ -75,7 +77,7 @@ class InstallTest(MockPackagesTest):
         pkg.fetcher = fetcher
 
 
-    def ztest_install_and_uninstall(self):
+    def test_install_and_uninstall(self):
         # Get a basic concrete spec for the trivial install package.
         spec = Spec('trivial_install_test_package')
         spec.concretize()
