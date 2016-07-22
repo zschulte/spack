@@ -499,7 +499,7 @@ class Package(object):
         mp = spack.mirror.mirror_archive_path(self.spec, fetcher)
         # Construct a path where the stage should build..
         s = self.spec
-        stage_name = "%s-%s-%s" % (s.name, s.version, s.full_hash())
+        stage_name = "%s-%s-%s" % (s.name, s.version, s.dag_hash())
         # Build the composite stage
         stage = Stage(fetcher, mirror_path=mp, name=stage_name, path=self.path)
         return stage
@@ -866,12 +866,14 @@ class Package(object):
         package. This includes the contents of all applied patches and the
         contents of applicable functions in the package subclass."""
         hashContent = list()
-        versionInfo = self.versions[self.version]
-        #TODO: this does not handle source control repos. Those which have a tag
-        #or revision should be easy, but what about cases where the latest state
-        #is being pulled.
-        if 'md5' in versionInfo:
-            hashContent.append(versionInfo['md5'])
+        #TODO? in cases where a digest or source_id isn't available, should this
+        #attempt to download the source and set one? For URL resources this will
+        #involve downloading the entire resource (repositories typically allow
+        #for just retrieving the latest commit ID)
+        source_id = fs.for_package_version(self, self.version).source_id()
+        if not source_id:
+            return
+        hashContent.append(source_id)
         hashContent.extend(':'.join((p.file_hash, str(p.level))) 
             for p in self.patches_to_apply())
         hashContent.append(package_hash(self.spec, remove_pkg_name))

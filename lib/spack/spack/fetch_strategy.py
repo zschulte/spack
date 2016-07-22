@@ -138,7 +138,9 @@ class FetchStrategyComposite(object):
     set_stage = FetchStrategy.set_stage
 
     def source_id(self):
-        return tuple(i.source_id() for i in self)
+        component_ids = tuple(i.source_id() for i in self)
+        if all(component_ids):
+            return component_ids
     
 
 class URLFetchStrategy(FetchStrategy):
@@ -539,15 +541,12 @@ class GitFetchStrategy(VCSFetchStrategy):
         return self._git
 
     def source_id(self):
-        if self.commit:
-            return self.commit
-        elif self.tag:
-            commitref = self.tag
-        elif self.branch:
-            commitref = self.branch
-        else:
-            return None
-        output = self.git('ls-remote', self.url, commitref, output=str)
+        return self.commit or self.tag
+            
+    def get_source_id(self):
+        if not self.branch:
+            return
+        output = self.git('ls-remote', self.url, self.branch, output=str)
         if output:
             return output.split()[0]
 
@@ -668,8 +667,9 @@ class SvnFetchStrategy(VCSFetchStrategy):
         return self._svn
 
     def source_id(self):
-        if self.revision:
-            return self.revision
+        return self.revision
+
+    def get_source_id(self):
         output = self.svn('info', self.url, output=str)
         if not output:
             return None
@@ -762,11 +762,10 @@ class HgFetchStrategy(VCSFetchStrategy):
         return self._hg
 
     def source_id(self):
-        args = []
-        if self.revision:
-            args.append('-r {0}'.format(self.revision))
-        args.append(self.url)
-        output = self.hg('id', *args, output=str)
+        return self.revision
+
+    def get_source_id(self):
+        output = self.hg('id', self.url, output=str)
         if output:
             return output.strip()
 
