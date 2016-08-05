@@ -95,32 +95,30 @@ thing.  Spack uses ~variant in directory names and in the canonical form of
 specs to avoid ambiguity.  Both are provided because ~ can cause shell
 expansion when it is the first character in an id typed on the command line.
 """
-import sys
-import hashlib
 import base64
+import hashlib
 import imp
+import sys
 from StringIO import StringIO
 from operator import attrgetter
-import yaml
-from yaml.error import MarkedYAMLError
 
 import llnl.util.tty as tty
-from llnl.util.lang import *
-from llnl.util.tty.color import *
-from llnl.util.filesystem import join_path
-
 import spack
 import spack.architecture
-import spack.parse
-import spack.error
 import spack.compilers as compilers
-
-from spack.version import *
-from spack.util.string import *
-from spack.util.prefix import Prefix
-from spack.util.naming import mod_to_class
-from spack.virtual import ProviderIndex
+import spack.error
+import spack.parse
+import yaml
+from llnl.util.filesystem import join_path
+from llnl.util.lang import *
+from llnl.util.tty.color import *
 from spack.build_environment import get_path_from_module, load_module
+from spack.util.naming import mod_to_class
+from spack.util.prefix import Prefix
+from spack.util.string import *
+from spack.version import *
+from spack.virtual import ProviderIndex
+from yaml.error import MarkedYAMLError
 
 # Valid pattern for an identifier in Spack
 identifier_re = r'\w[\w-]*'
@@ -159,19 +157,6 @@ special_types = {
     'alldeps': alldeps,
     'nolink': nolink,
 }
-
-
-def index_specs(specs):
-    """Take a list of specs and return a dict of lists.  Dict is
-       keyed by spec name and lists include all specs with the
-       same name.
-    """
-    spec_dict = {}
-    for spec in specs:
-        if spec.name not in spec_dict:
-            spec_dict[spec.name] = []
-        spec_dict[spec.name].append(spec)
-    return spec_dict
 
 
 def colorize_spec(spec):
@@ -475,7 +460,7 @@ class DependencyMap(HashableMap):
 
     def __str__(self):
         return ''.join(
-            ["^" + str(self[name].spec) for name in sorted(self.keys())])
+            ["^" + self[name].format() for name in sorted(self.keys())])
 
 
 @key_ordering
@@ -878,7 +863,7 @@ class Spec(object):
             for name in sorted(successors):
                 child = successors[name]
                 children = child.spec.traverse_with_deptype(
-                    visited, d=d + 1, deptype=deptype_query,
+                    visited, d=d + 1, deptype=deptype,
                     deptype_query=deptype_query,
                     _self_deptype=child.deptypes, **kwargs)
                 for elt in children:
@@ -1062,7 +1047,7 @@ class Spec(object):
         """
         try:
             yfile = yaml.load(stream)
-        except MarkedYAMLError, e:
+        except MarkedYAMLError as e:
             raise SpackYAMLError("error parsing YAML spec:", str(e))
 
         nodes = yfile['spec']
@@ -1376,7 +1361,7 @@ class Spec(object):
 
             return flat_deps
 
-        except UnsatisfiableSpecError, e:
+        except UnsatisfiableSpecError as e:
             # Here, the DAG contains two instances of the same package
             # with inconsistent constraints.  Users cannot produce
             # inconsistent specs like this on the command line: the
@@ -1411,7 +1396,7 @@ class Spec(object):
                     dep = Spec(name)
                 try:
                     dep.constrain(dep_spec)
-                except UnsatisfiableSpecError, e:
+                except UnsatisfiableSpecError as e:
                     e.message = ("Conflicting conditional dependencies on"
                                  "package %s for spec %s" % (self.name, self))
                     raise e
@@ -1497,7 +1482,7 @@ class Spec(object):
         try:
             changed |= spec_deps[dep.name].spec.constrain(dep)
 
-        except UnsatisfiableSpecError, e:
+        except UnsatisfiableSpecError as e:
             e.message = "Invalid spec: '%s'. "
             e.message += "Package %s requires %s %s, but spec asked for %s"
             e.message %= (spec_deps[dep.name].spec, dep.name,
@@ -2432,7 +2417,7 @@ class SpecParser(spack.parse.Parser):
                     # errors now?
                     specs.append(self.spec(None, True))
 
-        except spack.parse.ParseError, e:
+        except spack.parse.ParseError as e:
             raise SpecParseError(e)
 
         # If the spec has an os or a target and no platform, give it
@@ -2878,4 +2863,4 @@ class AmbiguousHashError(SpecError):
     def __init__(self, msg, *specs):
         super(AmbiguousHashError, self).__init__(msg)
         for spec in specs:
-            print '    ', spec.format('$.$@$%@+$+$=$#')
+            print('    ', spec.format('$.$@$%@+$+$=$#'))
