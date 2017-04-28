@@ -26,8 +26,9 @@
 ########################################################################
 #
 # This file is part of Spack and sets up the spack environment for
-# bash and zsh.  This includes dotkit support, module support, and
-# it also puts spack in your path.  Source it like this:
+# bourne-compatible shells: bash, dash, zsh, etc..  This includes dotkit
+# support, module support, and it also puts spack in your path.  Source
+# it like this:
 #
 #    . /path/to/spack/share/spack/setup-env.sh
 #
@@ -56,24 +57,25 @@
 # spack dotfiles.
 ########################################################################
 
-function spack {
-    # Zsh does not do word splitting by default, this enables it for this function only
+spack() {
+    # Zsh does not do word splitting by default, this enables it for this
+    # function only
     if [ -n "${ZSH_VERSION:-}" ]; then
         emulate -L sh
     fi
 
-    # save raw arguments into an array before butchering them
-    args=( "$@" )
-
     # accumulate initial flags for main spack command
     _sp_flags=""
-    while [[ "$1" =~ ^- ]]; do
+    while [ "${1#-}" != "${1}" ]; do
         _sp_flags="$_sp_flags $1"
         shift
     done
 
     # h and V flags don't require further output parsing.
-    if [[ (! -z "$_sp_flags") && ("$_sp_flags" =~ '.*h.*' || "$_sp_flags" =~ '.*V.*') ]]; then
+    if [ ! -z "$_sp_flags" ] \
+           && [ "${_sp_flags#*h}" != "${_sp_flags}" ] \
+           || [ "${_sp_flags#*V}" != "${_sp_flags}" ];
+    then
         command spack $_sp_flags "$@"
         return
     fi
@@ -90,7 +92,7 @@ function spack {
                 command spack cd -h
             else
                 LOC="$(spack location $_sp_arg "$@")"
-                if [[ -d "$LOC" ]] ; then
+                if [ -d "$LOC" ] ; then
                     cd "$LOC"
                 fi
             fi
@@ -100,7 +102,7 @@ function spack {
             # Shift any other args for use off before parsing spec.
             _sp_subcommand_args=""
             _sp_module_args=""
-            while [[ "$1" =~ ^- ]]; do
+            while [ "${1#-}" != "${1}" ]; do
                 if [ "$1" = "-r" -o "$1" = "--dependencies" ]; then
                     _sp_subcommand_args="$_sp_subcommand_args $1"
                 else
@@ -117,25 +119,37 @@ function spack {
             # If spack module command comes back with an error, do nothing.
             case $_sp_subcommand in
                 "use")
-                    if _sp_full_spec=$(command spack $_sp_flags module loads --input-only $_sp_subcommand_args --module-type dotkit $_sp_spec); then
+                    if _sp_full_spec=$(command spack $_sp_flags module loads \
+                                       --input-only $_sp_subcommand_args \
+                                       --module-type dotkit $_sp_spec);
+                    then
                         use $_sp_module_args $_sp_full_spec
                     fi ;;
                 "unuse")
-                    if _sp_full_spec=$(command spack $_sp_flags module loads --input-only $_sp_subcommand_args --module-type dotkit $_sp_spec); then
+                    if _sp_full_spec=$(command spack $_sp_flags module loads \
+                                       --input-only $_sp_subcommand_args \
+                                       --module-type dotkit $_sp_spec);
+                    then
                         unuse $_sp_module_args $_sp_full_spec
                     fi ;;
                 "load")
-                    if _sp_full_spec=$(command spack $_sp_flags module loads --input-only $_sp_subcommand_args --module-type tcl $_sp_spec); then
+                    if _sp_full_spec=$(command spack $_sp_flags module loads \
+                                       --input-only $_sp_subcommand_args \
+                                       --module-type tcl $_sp_spec);
+                    then
                         module load $_sp_module_args $_sp_full_spec
                     fi ;;
                 "unload")
-                    if _sp_full_spec=$(command spack $_sp_flags module loads --input-only $_sp_subcommand_args --module-type tcl $_sp_spec); then
+                    if _sp_full_spec=$(command spack $_sp_flags module loads \
+                                       --input-only $_sp_subcommand_args \
+                                       --module-type tcl $_sp_spec);
+                    then
                         module unload $_sp_module_args $_sp_full_spec
                     fi ;;
             esac
             ;;
         *)
-            command spack "${args[@]}"
+            command spack $_sp_flags $_sp_subcommand "$@"
             ;;
     esac
 }
@@ -145,7 +159,7 @@ function spack {
 #      pathadd /path/to/dir            # add to PATH
 # or   pathadd OTHERPATH /path/to/dir  # add to OTHERPATH
 ########################################################################
-function _spack_pathadd {
+_spack_pathadd() {
     # If no variable name is supplied, just append to PATH
     # otherwise append to that variable.
     _pa_varname=PATH
@@ -158,7 +172,10 @@ function _spack_pathadd {
     # Do the actual prepending here.
     eval "_pa_oldvalue=\${${_pa_varname}:-}"
 
-    if [ -d "$_pa_new_path" ] && [[ ":$_pa_oldvalue:" != *":$_pa_new_path:"* ]]; then
+    _pa_canonical=":$_pa_oldvalue:"
+    if [ -d "$_pa_new_path" ] \
+           && [ "${_pa_canonical#*:${_pa_new_path}:}" != *"${_pa_canonical}" ];
+    then
         if [ -n "$_pa_oldvalue" ]; then
             eval "export $_pa_varname=\"$_pa_new_path:$_pa_oldvalue\""
         else
@@ -176,10 +193,10 @@ fi
 # Figure out where this file is.  Below code needs to be portable to
 # bash and zsh.
 #
-_sp_source_file="${BASH_SOURCE[0]}"  # Bash's location of last sourced file.
+_sp_source_file="${BASH_SOURCE}"  # Bash's location of last sourced file.
 if [ -z "$_sp_source_file" ]; then
     _sp_source_file="$0:A"           # zsh way to do it
-    if [[ "$_sp_source_file" == *":A" ]]; then
+    if [ "${_sp_source_file#*:A}" != "${_sp_source_file}" ]; then
         # Not zsh either... bail out with plain old $0,
         # which WILL NOT work if this is sourced indirectly.
         _sp_source_file="$0"
