@@ -26,7 +26,37 @@ import platform
 import re
 import subprocess
 
+_known_intel_names_by_number = {
+    0x06: 'presler',
+    0x16: 'merom',
+    0x0f: 'merom',
+    0x1d: 'penryn',
+    0x17: 'penryn',
+    0x2e: 'nehalem',
+    0x1a: 'nehalem',
+    0x1e: 'nehalem',
+    0x2f: 'westmere',
+    0x2c: 'westmere',
+    0x25: 'westmere',
+    0x2d: 'sandybridge',
+    0x2a: 'sandybridge',
+    0x3a: 'ivybridge',
+    0x3e: 'ivybridge',
+    0x3c: 'haswell',
+    0x3f: 'haswell',
+    0x45: 'haswell',
+    0x46: 'haswell',
+    0x3d: 'broadwell',
+    0x47: 'broadwell',
+    0x4f: 'broadwell',
+    0x56: 'broadwell',
+    0x1c: 'atom',
+    0x26: 'atom',
+    0x36: 'atom',
+    0x4d: 'atom'
+    }
 
+# Tuple of name, flags added, flags removed (default [])
 _intel_32 = [
     ('i686', []),
     ('pentium2', ['mmx']),
@@ -36,13 +66,14 @@ _intel_32 = [
     ]
 
 _intel_64 = [ # commenting out the ones that aren't shown through sysctl
-    ('nocona', ['mmx', 'sse', 'sse2', 'sse3']),#lm
-    ('core2', ['ssse3']),
+    ('x86-64', ['lm'], ['mmx', 'sse', 'sse2', 'sse3']),
+    ('nocona', ['sse3']),
+    ('core2', ['mmx', 'sse', 'sse2', 'ssse3'], ['sse3']),
     ('nehalem', ['sse4_1', 'sse4_2', 'popcnt']),
     ('westmere', ['aes', 'pclmulqdq']),
     ('sandybridge', ['avx']),
-    ('ivybridge', ['rdrand', 'f16c']),#fsgsbase (is it RDWRFSGS on darwin?)
-    ('haswell', ['movbe', 'fma', 'avx2', 'bmi1', 'bmi2']),
+    ('ivybridge', ['fsgsbase', 'rdrand', 'f16c']),
+    ('haswell', ['movbe', 'avx2', 'fma', 'bmi1', 'bmi2']),
     ('broadwell', ['rdseed', 'adx']),
     ('skylake', ['xsavec', 'xsaves'])
     ]
@@ -156,13 +187,14 @@ def get_cpu_name_helper(system):
         return ''
 
     if 'vendor_id' in cpuinfo and cpuinfo['vendor_id'] == 'GenuineIntel':
-        if 'model name' not in cpuinfo or 'flags' not in cpuinfo:
+        if 'model' not in cpuinfo and ('model name' not in cpuinfo or
+                                            'flags' not in cpuinfo):
             # We don't have the information we need to determine the
             # microarchitecture name
             return ''
         return get_intel_cpu_name(cpuinfo)
     elif 'vendor_id' in cpuinfo and cpuinfo['vendor_id'] == 'AuthenticAMD':
-        if 'cpu family' not in cpuinfo or 'flags' not in cpuinfo:
+        if 'model name' not in cpuinfo:
             # We don't have the information we need to determine the
             # microarchitecture name
             return ''
@@ -183,24 +215,31 @@ def get_ibm_cpu_name(cpu):
         return ''
 
 def get_intel_cpu_name(cpuinfo):
+    model_number = int(cpuinfo['model'])
+    if model_number in _known_intel_names_by_number:
+        return _known_intel_names_by_number[model_number]
     model_name = cpuinfo['model name']
     if 'Atom' in model_name:
         return 'atom'
     elif 'Quark' in model_name:
         return 'quark'
     elif 'Xeon' in model_name and 'Phi' in model_name:
+        # This is hacky and needs to be extended for newer avx512 chips
         return 'knl'
     else:
         ret = ''
         flag_list = cpuinfo['flags'].split()
-        flags_dict = _intel_64 if platform.machine() == 'x86_64' else _intel_32
         proc_flags = []
-        for proc, proc_flags_added in flags_dict:
-            proc_flags.extend(proc_flags_added)
+        for entry in _intel_processors:
+            try:
+                proc, flags_added, flags_removed = entry
+            except ValueError:
+                proc, flags_added = entry
+                flags_removed = []
+            proc_flags = filter(lambda x: x not in flags_removed, proc_flags)
+            proc_flags.extend(flags_added)
             if all(f in flag_list for f in proc_flags):
                 ret = proc
-            else:
-                break
         return ret
 
 def get_amd_cpu_name(cpuinfo):
