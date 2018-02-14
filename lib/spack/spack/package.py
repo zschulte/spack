@@ -73,6 +73,7 @@ from spack.util.executable import which
 from spack.stage import Stage, ResourceStage, StageComposite
 from spack.util.environment import dump_environment
 from spack.version import Version
+from spack.directives import variant
 
 """Allowed URL schemes for spack packages."""
 _ALLOWED_URL_SCHEMES = ["http", "https", "ftp", "file", "git"]
@@ -555,6 +556,10 @@ class PackageBase(with_metaclass(PackageMeta, object)):
     #: List of strings which contains GitHub usernames of package maintainers.
     #: Do not include @ here in order not to unnecessarily ping the users.
     maintainers = []
+
+    # Add the universal variant "tuning" with values generic | specific
+    variant('tuning', values=('generic', 'specific'), default='generic',
+            description='Set compiler tuning generic or to target')
 
     def __init__(self, spec):
         # this determines how the package should be built.

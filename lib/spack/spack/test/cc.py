@@ -54,6 +54,8 @@ test_command = [
 class CompilerWrapperTest(unittest.TestCase):
 
     def setUp(self):
+        self.old_env = os.environ
+
         self.cc = Executable(join_path(spack.build_env_path, "cc"))
         self.ld = Executable(join_path(spack.build_env_path, "ld"))
         self.cpp = Executable(join_path(spack.build_env_path, "cpp"))
@@ -80,6 +82,8 @@ class CompilerWrapperTest(unittest.TestCase):
         os.environ['SPACK_F77_RPATH_ARG'] = "-Wl,-rpath,"
         os.environ['SPACK_FC_RPATH_ARG']  = "-Wl,-rpath,"
 
+        os.environ['SPACK_TARGET_ARGS'] = ''
+
         # Make some fake dependencies
         self.tmp_deps = tempfile.mkdtemp()
         self.dep1 = join_path(self.tmp_deps, 'dep1')
@@ -101,6 +105,7 @@ class CompilerWrapperTest(unittest.TestCase):
             del os.environ['SPACK_DEPENDENCIES']
 
     def tearDown(self):
+        os.environ = self.old_env
         shutil.rmtree(self.tmp_deps, True)
 
     def check_cc(self, command, args, expected):
