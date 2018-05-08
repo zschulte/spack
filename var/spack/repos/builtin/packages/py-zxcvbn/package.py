@@ -25,16 +25,16 @@
 from spack import *
 
 
-class PySubrosa(PythonPackage):
-	"""Subrosa is a Python implementation of Shamir’s Secret Sharing. An
-algorithm for sharing a secret with a group of people without letting any
-individual of the group know the secret."""
+class PyZxcvbn(PythonPackage):
+	"""A realistic password strength estimator.
 
-    homepage = "https://github.com/DasIch/subrosa/"
-    url      = "https://github.com/DasIch/subrosa/archive/0.1.0.tar.gz"
+This is a Python implementation of the library created by the team at
+Dropbox."""
 
-    version('0.1.0', '61c46944b9f7d039a37aef4bace60a3e')
+    homepage = "https://github.com/dwolfhub/zxcvbn-python"
+    url      = "https://github.com/dwolfhub/zxcvbn-python/archive/v4.4.25.tar.gz"
+
+    version('4.4.25', 'e9bdae7193e6e13438cc9bb11eedd846')
 
     depends_on('py-setuptools', type='build')
-    depends_on('py-gf256',        type=('build', 'run'))
 

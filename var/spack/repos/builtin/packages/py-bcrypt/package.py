@@ -22,19 +22,19 @@
 # License along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 ##############################################################################
+
 from spack import *
 
 
-class PySubrosa(PythonPackage):
-	"""Subrosa is a Python implementation of Shamir’s Secret Sharing. An
-algorithm for sharing a secret with a group of people without letting any
-individual of the group know the secret."""
+class PyBcrypt(PythonPackage):
+    """Modern password hashing for your software and your servers"""
 
-    homepage = "https://github.com/DasIch/subrosa/"
-    url      = "https://github.com/DasIch/subrosa/archive/0.1.0.tar.gz"
+    homepage = "https://github.com/pyca/bcrypt/"
+    url      = "https://github.com/pyca/bcrypt/archive/3.1.4.tar.gz"
 
-    version('0.1.0', '61c46944b9f7d039a37aef4bace60a3e')
+    version('3.1.4', '2db1e1bf4a9e92f78297e1f090d7a30e')
 
     depends_on('py-setuptools', type='build')
-    depends_on('py-gf256',        type=('build', 'run'))
+    depends_on('py-cffi', type='build', 'run')
+    depends_on('py-six', type='build', 'run')
 
