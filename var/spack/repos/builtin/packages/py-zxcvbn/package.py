@@ -26,10 +26,10 @@ from spack import *
 
 
 class PyZxcvbn(PythonPackage):
-	"""A realistic password strength estimator.
+    """A realistic password strength estimator.
 
-This is a Python implementation of the library created by the team at
-Dropbox."""
+       This is a Python implementation of the library created by the team at
+       Dropbox."""
 
     homepage = "https://github.com/dwolfhub/zxcvbn-python"
     url      = "https://github.com/dwolfhub/zxcvbn-python/archive/v4.4.25.tar.gz"

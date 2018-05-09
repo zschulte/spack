@@ -26,8 +26,8 @@ from spack import *
 
 
 class PyFusepy(PythonPackage):
-	"""fusepy is a Python module that provides a simple interface to FUSE and
-MacFUSE. It’s just one file and is implemented using ctypes.
+    """fusepy is a Python module that provides a simple interface to FUSE and
+MacFUSE. It's just one file and is implemented using ctypes.
 
 The original version of fusepy was hosted on Google Code, but is now 
 officially hosted on GitHub.

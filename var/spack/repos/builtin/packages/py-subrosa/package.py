@@ -26,7 +26,7 @@ from spack import *
 
 
 class PySubrosa(PythonPackage):
-	"""Subrosa is a Python implementation of Shamir’s Secret Sharing. An
+    """Subrosa is a Python implementation of Shamir's Secret Sharing. An
 algorithm for sharing a secret with a group of people without letting any
 individual of the group know the secret."""
 
