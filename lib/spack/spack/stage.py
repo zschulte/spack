@@ -378,7 +378,9 @@ class Stage(object):
             # Join URLs of mirror roots with mirror paths. Because
             # urljoin() will strip everything past the final '/' in
             # the root, so we add a '/' if it is not present.
-            mirror_roots = [root if root.endswith('/') else root + '/'
+            mirror_roots = [canonicalize_path(root, make_abs=False)
+                            if root.endswith('/')
+                            else canonicalize_path(root, make_abs=False) + '/'
                             for root in mirrors.values()]
             urls = [urljoin(root, self.mirror_path) for root in mirror_roots]
 
