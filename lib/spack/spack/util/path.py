@@ -36,6 +36,7 @@ import spack.paths
 
 __all__ = [
     'substitute_config_variables',
+    'substitute_path_vars',
     'canonicalize_path']
 
 # Substitutions to perform
@@ -68,12 +69,17 @@ def substitute_config_variables(path):
     return re.sub(r'(\$\w+\b|\$\{\w+\})', repl, path)
 
 
-def canonicalize_path(path, make_abs=True):
-    """Substitute config vars, expand environment vars,
-       expand user home, take abspath (optional)."""
+def substitute_path_variables(path):
+    """Substitute config vars, expand environment vars, expand user home."""
     path = substitute_config_variables(path)
     path = os.path.expandvars(path)
     path = os.path.expanduser(path)
+
+    
+def canonicalize_path(path, make_abs=True):
+    """Substitute config vars, expand environment vars,
+       expand user home, take abspath (optional)."""
+    path = substitute_path_variables(path)
     if make_abs:
         path = os.path.abspath(path)
     return path
