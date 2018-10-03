@@ -138,6 +138,7 @@ addons:
       - r-base-dev
       - perl
       - perl-base
+      - environment-modules
 
 cache:
   pip: true
@@ -183,6 +184,9 @@ before_script:
   - if [[ "$TEST_SUITE" == "build" ]]; then cp
         share/spack/qa/configuration/packages.yaml etc/spack/packages.yaml;
     fi
+
+  # Set up environment modules
+  - source /usr/share/Modules/init/bash
 
 #=============================================================================
 # Building
