@@ -16,7 +16,7 @@ class Pflotran(AutotoolsPackage):
     git      = "https://bitbucket.org/pflotran/pflotran.git"
 
     version('develop')
-    version('xsdk-0.4.0', commit='6c8baef2166ceb49cc3e09458fd64bbefc3cebe2')
+    version('xsdk-0.4.0', commit='c851cbc94fc56a32cfdb0678f3c24b9936a5584e')
     version('xsdk-0.3.0', branch='release/xsdk-0.3.0')
     version('xsdk-0.2.0', commit='4da763c6136df57caff43f98c926433958cfdea6')
 

@@ -54,7 +54,7 @@ class Xsdk(Package):
 
     depends_on('petsc@develop+trilinos+mpi+hypre+superlu-dist+metis+hdf5~mumps+double~int64',
                when='@develop')
-    depends_on('petsc@3.10.2+trilinos+mpi+hypre+superlu-dist+metis+hdf5~mumps+double~int64',
+    depends_on('petsc@3.10.3+trilinos+mpi+hypre+superlu-dist+metis+hdf5~mumps+double~int64',
                when='@0.4.0')
     depends_on('petsc@3.8.2+trilinos+mpi+hypre+superlu-dist+metis+hdf5~mumps+double~int64',
                when='@0.3.0')
