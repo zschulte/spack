@@ -51,6 +51,28 @@ __all__ = []
 reserved_names = ['patches']
 
 
+def make_when_spec(value):
+    """Used for parsing ``when=`` clauses in directives.
+
+    Directives with ``when`` specs apply only when the package is
+    instantiated in a configuration satisfying the ``when`` spec.
+
+    ``when`` clauses can *also* be boolean expressions instead of
+    Specs. Boolean when clauses allow package authors to put expressions
+    into packages that are evaluated at class definition time (rather
+    than on the package spec).  If the ``when`` expression evaluates to
+    ``True``, the directive applies. If ``False``, it's never executed.
+
+    """
+    if value is False:
+        return False
+
+    if value is None or value is True:
+        return spack.spec.Spec()
+
+    return spack.spec.Spec(value)
+
+
 class DirectiveMeta(type):
     """Flushes the directives that were temporarily stored in the staging
     area into the package.
@@ -238,13 +260,9 @@ def version(ver, checksum=None, **kwargs):
 
 
 def _depends_on(pkg, spec, when=None, type=default_deptype, patches=None):
-    # If when is False do nothing
-    if when is False:
+    when_spec = make_when_spec(when)
+    if not when_spec:
         return
-    # If when is None or True make sure the condition is always satisfied
-    if when is None or when is True:
-        when = pkg.name
-    when_spec = spack.spec.parse_anonymous_spec(when, pkg.name)
 
     dep_spec = spack.spec.Spec(spec)
     if pkg.name == dep_spec.name:
@@ -306,8 +324,9 @@ def conflicts(conflict_spec, when=None, msg=None):
     """
     def _execute_conflicts(pkg):
         # If when is not specified the conflict always holds
-        condition = pkg.name if when is None else when
-        when_spec = spack.spec.parse_anonymous_spec(condition, pkg.name)
+        when_spec = make_when_spec(when)
+        if not when_spec:
+            return
 
         # Save in a list the conflicts and the associated custom messages
         when_spec_list = pkg.conflicts.setdefault(conflict_spec, [])
@@ -354,12 +373,11 @@ def extends(spec, **kwargs):
 
     """
     def _execute_extends(pkg):
-        # if pkg.extendees:
-        #     directive = 'extends'
-        #     msg = 'Packages can extend at most one other package.'
-        #     raise DirectiveError(directive, msg)
+        when = kwargs.get('when')
+        when_spec = make_when_spec(when)
+        if not when_spec:
+            return
 
-        when = kwargs.get('when', pkg.name)
         _depends_on(pkg, spec, when=when)
         pkg.extendees[spec] = (spack.spec.Spec(spec), kwargs)
     return _execute_extends
@@ -372,8 +390,14 @@ def provides(*specs, **kwargs):
        can use the providing package to satisfy the dependency.
     """
     def _execute_provides(pkg):
-        spec_string = kwargs.get('when', pkg.name)
-        provider_spec = spack.spec.parse_anonymous_spec(spec_string, pkg.name)
+        when = kwargs.get('when')
+        when_spec = make_when_spec(when)
+        if not when_spec:
+            return
+
+        # when specs for provides() need a name, as they are used to buld
+        # the ProviderIndex.
+        when_spec.name = pkg.name
 
         for string in specs:
             for provided_spec in spack.spec.parse(string):
@@ -383,7 +407,7 @@ def provides(*specs, **kwargs):
 
                 if provided_spec not in pkg.provided:
                     pkg.provided[provided_spec] = set()
-                pkg.provided[provided_spec].add(provider_spec)
+                pkg.provided[provided_spec].add(when_spec)
     return _execute_provides
 
 
@@ -409,9 +433,9 @@ def patch(url_or_filename, level=1, when=None, working_dir=".", **kwargs):
 
     """
     def _execute_patch(pkg_or_dep):
-        constraint = pkg_or_dep.name if when is None else when
-        when_spec = spack.spec.parse_anonymous_spec(
-            constraint, pkg_or_dep.name)
+        when_spec = make_when_spec(when)
+        if not when_spec:
+            return
 
         # if this spec is identical to some other, then append this
         # patch to the existing list.
@@ -505,7 +529,11 @@ def resource(**kwargs):
       resource is moved into the main package stage area.
     """
     def _execute_resource(pkg):
-        when = kwargs.get('when', pkg.name)
+        when = kwargs.get('when')
+        when_spec = make_when_spec(when)
+        if not when_spec:
+            return
+
         destination = kwargs.get('destination', "")
         placement = kwargs.get('placement', None)
 
@@ -528,7 +556,6 @@ def resource(**kwargs):
             message += "\tdestination : '{dest}'\n".format(dest=destination)
             raise RuntimeError(message)
 
-        when_spec = spack.spec.parse_anonymous_spec(when, pkg.name)
         resources = pkg.resources.setdefault(when_spec, [])
         name = kwargs.get('name')
         fetcher = from_kwargs(**kwargs)

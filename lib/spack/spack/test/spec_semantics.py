@@ -7,52 +7,54 @@ import spack.architecture
 import pytest
 
 from spack.spec import Spec, UnsatisfiableSpecError
-from spack.spec import substitute_abstract_variants, parse_anonymous_spec
+from spack.spec import substitute_abstract_variants
 from spack.variant import InvalidVariantValueError
 from spack.variant import MultipleValuesInExclusiveVariantError
 
 
-def target_factory(spec_string, target_concrete):
-    spec = Spec(spec_string) if spec_string else Spec()
+def make_spec(spec_like, concrete):
+    if isinstance(spec_like, Spec):
+        return spec_like
 
-    if target_concrete:
+    spec = Spec(spec_like)
+    if concrete:
         spec._mark_concrete()
         substitute_abstract_variants(spec)
-
     return spec
 
 
-def argument_factory(argument_spec, left):
-    try:
-        # If it's not anonymous, allow it
-        right = target_factory(argument_spec, False)
-    except Exception:
-        right = parse_anonymous_spec(argument_spec, left.name)
-    return right
+def make_constraint(spec_like, left):
+    if isinstance(spec_like, Spec):
+        return spec_like
+
+    spec = Spec(spec_like)
+    if not spec.name:
+        spec.name = left.name
+    return spec
 
 
-def check_satisfies(target_spec, argument_spec, target_concrete=False):
+def check_satisfies(target_spec, constraint_spec, target_concrete=False):
 
-    left = target_factory(target_spec, target_concrete)
-    right = argument_factory(argument_spec, left)
+    left = make_spec(target_spec, target_concrete)
+    right = make_constraint(constraint_spec, left)
 
     # Satisfies is one-directional.
     assert left.satisfies(right)
-    if argument_spec:
-        assert left.satisfies(argument_spec)
+    if constraint_spec:
+        assert left.satisfies(constraint_spec)
 
     # If left satisfies right, then we should be able to constrain
     # right by left.  Reverse is not always true.
     right.copy().constrain(left)
 
 
-def check_unsatisfiable(target_spec, argument_spec, target_concrete=False):
+def check_unsatisfiable(target_spec, constraint_spec, target_concrete=False):
 
-    left = target_factory(target_spec, target_concrete)
-    right = argument_factory(argument_spec, left)
+    left = make_spec(target_spec, target_concrete)
+    right = make_constraint(constraint_spec, left)
 
     assert not left.satisfies(right)
-    assert not left.satisfies(argument_spec)
+    assert not left.satisfies(constraint_spec)
 
     with pytest.raises(UnsatisfiableSpecError):
         right.copy().constrain(left)
@@ -94,31 +96,31 @@ class TestSpecSematics(object):
 
     def test_empty_satisfies(self):
         # Basic satisfaction
-        check_satisfies('libelf', '')
-        check_satisfies('libdwarf', '')
-        check_satisfies('%intel', '')
-        check_satisfies('^mpi', '')
-        check_satisfies('+debug', '')
-        check_satisfies('@3:', '')
+        check_satisfies('libelf', Spec())
+        check_satisfies('libdwarf', Spec())
+        check_satisfies('%intel', Spec())
+        check_satisfies('^mpi', Spec())
+        check_satisfies('+debug', Spec())
+        check_satisfies('@3:', Spec())
 
         # Concrete (strict) satisfaction
-        check_satisfies('libelf', '', True)
-        check_satisfies('libdwarf', '', True)
-        check_satisfies('%intel', '', True)
-        check_satisfies('^mpi', '', True)
+        check_satisfies('libelf', Spec(), True)
+        check_satisfies('libdwarf', Spec(), True)
+        check_satisfies('%intel', Spec(), True)
+        check_satisfies('^mpi', Spec(), True)
         # TODO: Variants can't be called concrete while anonymous
-        # check_satisfies('+debug', '', True)
-        check_satisfies('@3:', '', True)
+        # check_satisfies('+debug', Spec(), True)
+        check_satisfies('@3:', Spec(), True)
 
         # Reverse (non-strict) satisfaction
-        check_satisfies('', 'libelf')
-        check_satisfies('', 'libdwarf')
-        check_satisfies('', '%intel')
-        check_satisfies('', '^mpi')
+        check_satisfies(Spec(), 'libelf')
+        check_satisfies(Spec(), 'libdwarf')
+        check_satisfies(Spec(), '%intel')
+        check_satisfies(Spec(), '^mpi')
         # TODO: Variant matching is auto-strict
         # we should rethink this
-        # check_satisfies('', '+debug')
-        check_satisfies('', '@3:')
+        # check_satisfies(Spec(), '+debug')
+        check_satisfies(Spec(), '@3:')
 
     def test_satisfies_namespace(self):
         check_satisfies('builtin.mpich', 'mpich')
@@ -338,8 +340,8 @@ class TestSpecSematics(object):
         # Semantics for a multi-valued variant is different
         # Depending on whether the spec is concrete or not
 
-        a = target_factory(
-            'multivalue_variant foo="bar"', target_concrete=True
+        a = make_spec(
+            'multivalue_variant foo="bar"', concrete=True
         )
         spec_str = 'multivalue_variant foo="bar,baz"'
         b = Spec(spec_str)
@@ -358,8 +360,8 @@ class TestSpecSematics(object):
         # An abstract spec can instead be constrained
         assert a.constrain(b)
 
-        a = target_factory(
-            'multivalue_variant foo="bar,baz"', target_concrete=True
+        a = make_spec(
+            'multivalue_variant foo="bar,baz"', concrete=True
         )
         spec_str = 'multivalue_variant foo="bar,baz,quux"'
         b = Spec(spec_str)
@@ -411,13 +413,13 @@ class TestSpecSematics(object):
 
         check_unsatisfiable(
             target_spec='multivalue_variant foo="bar"',
-            argument_spec='multivalue_variant +foo',
+            constraint_spec='multivalue_variant +foo',
             target_concrete=True
         )
 
         check_unsatisfiable(
             target_spec='multivalue_variant foo="bar"',
-            argument_spec='multivalue_variant ~foo',
+            constraint_spec='multivalue_variant ~foo',
             target_concrete=True
         )
 
