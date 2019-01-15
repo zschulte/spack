@@ -844,6 +844,27 @@ class Database(object):
                 continue
             # TODO: conditional way to do this instead of catching exceptions
 
+    def get_by_hash(self, dag_hash, default=None):
+        """Look up a spec by DAG hash, or by a DAG hash prefix.
+
+        Returns:
+            (list): a list of specs matching the hash or hash prefix
+        """
+        with self.read_transaction():
+            # hash is a full hash and is in the data somewhere
+            if dag_hash in self._data:
+                return [self._data[dag_hash].spec]
+
+            # check if hash is a prefix of some installed (or previously
+            # installed) spec.
+            matches = [rec.spec for h, rec in self._data.items()
+                       if h.startswith(dag_hash)]
+            if matches:
+                return matches
+
+            # nothing found
+            return default
+
     def query(
             self,
             query_spec=any,
